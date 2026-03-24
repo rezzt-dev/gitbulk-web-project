@@ -2,224 +2,479 @@ import '../style.css'
 
 // -- OS Detection Logic --
 const isUnix = navigator.userAgent.toLowerCase().includes('linux') || navigator.userAgent.toLowerCase().includes('mac');
-const initialOs = isUnix ? 'linux' : 'windows';
 
-// -- Content Data --
-const commands = [
-  { cmd: 'status', desc: 'Analiza el estado y divergencias con upstream.' },
-  { cmd: 'fetch', desc: 'Descarga de red metadatos y actualizaciones de orígenes.' },
-  { cmd: 'pull', desc: 'Avanza hacia el último registro remoto (Fast-Forward).' },
-  { cmd: 'checkout', desc: 'Mueve todos los repositorios simultáneamente a una rama.' },
-  { cmd: 'current-branch', desc: 'Matriz visual de la topografía actual de las ramas.' },
-  { cmd: 'clean', desc: 'Destruye iterativamente archivos no trackeados (Peligroso).' },
-  { cmd: 'ci-status', desc: 'Obtiene reportes directos (PASS/FAIL) de la URL CI.' },
-  { cmd: 'export', desc: 'Inyecta y construye un `snapshot.json` con metadatos.' },
-  { cmd: 'restore', desc: 'Rescata y clona la infraestructura desde un snapshot.' },
-  { cmd: 'auth', desc: 'Almacena y certifica tus claves PAT seguras.' },
-];
+// -- App State --
+interface AppState {
+  lang: 'es' | 'en';
+  theme: 'dark' | 'light';
+  os: 'windows' | 'linux';
+}
+let state: AppState = {
+  lang: 'es',
+  theme: 'dark', // Always startup in dark mode for premium feel
+  os: isUnix ? 'linux' : 'windows'
+};
 
-const features = [
-  { 
-    icon: '<svg class="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>', 
-    title: 'Ejecución Concurrente', 
-    desc: 'Aprovecha múltiples hilos reduciendo drásticamente el tiempo de ejecución de las operaciones.' 
+// -- SVG Icons (Phosphor/Lucide style) --
+const icons = {
+  cpu: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500 group-hover:text-emerald-400 transition-colors"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>',
+  database: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500 group-hover:text-emerald-400 transition-colors"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>',
+  key: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500 group-hover:text-emerald-400 transition-colors"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>',
+  shield: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500 group-hover:text-emerald-400 transition-colors"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>',
+  check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+  copy: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
+  github: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02.8-.22 1.65-.33 2.5-.33.85 0 1.7.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.65.7 1.03 1.59 1.03 2.68 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z"/></svg>',
+  sun: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
+  moon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
+  translate: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>'
+};
+
+// -- Dictionary (i18n) --
+const dict = {
+  es: {
+    navDocs: "Infraestructura",
+    navCmds: "Comandos",
+    navRepo: "Repositorio",
+    heroBadge: "GitBulk 1.2.0 ya está disponible",
+    heroTitleHtml: 'Domina todos tus repositorios con <span class="text-gradient inline-block font-black">GitBulk</span>',
+    heroDesc: "Una herramienta profesional de línea de comandos diseñada para ingenieros DevOps. Automatiza, sincroniza y gestiona docenas de repositorios concurrentemente sin fricción.",
+    installQuick: "Instalación Rápida",
+    tabWin: "Windows",
+    tabLin: "Linux / macOS",
+    featsTag: "Ingeniería Avanzada",
+    featsTitle: "Arquitectura de Alto Rendimiento",
+    featsDesc: "GitBulk mitiga la latencia y la fatiga repetitiva de gestionar arquitecturas masivas de microservicios con un diseño enfocado en velocidad bruta y seguridad inquebrantable.",
+    f1Title: "Ejecución Concurrente",
+    f1Desc: "Aprovecha múltiples hilos de tu procesador para despachar cientos de repositorios en milisegundos. Di adiós a los scripts bash lineales y letárgicos.",
+    f2Title: "Persistencia de Estado",
+    f2Desc: "Recuerda silenciosamente el último ecosistema de directorios para transiciones instantáneas en futuros procesos sin re-ingresar rutas.",
+    f3Title: "Manejo PAT Integrado",
+    f3Desc: "Autenticación automática transparente a repositorios privados evitando cuellos de botella en los complejos flujos de descarga.",
+    f4Title: "Autoprotección Activa",
+    f4Desc: "Barreras lógicas de confirmación y pantallas dinámicas previenen desastres ante operaciones hiper-destructivas (ej: `clean` forzado).",
+    cmdTag: "Referencia CLI",
+    cmdTitle: "Herramientas Masivas",
+    cmdDesc: "Simplifica tu pipeline CI/CD y tu flujo diario ejecutando acciones transaccionales en todo tu entorno de repositorios con una sola instrucción.",
+    colExec: "Ejecutable",
+    colProp: "Propósito Funcional",
+    footTitle: "GitBulk Dev Tools",
+    footSub: "Versión CLI Profesional v1.2.0",
+    footBuild: "Construido para velocidad y fiabilidad extrema.",
+    footDev: "Desarrollado y mantenido por",
+    cmds: [
+      { cmd: 'status', desc: 'Analiza el estado y divergencias con upstream al instante en todos los proyectos.' },
+      { cmd: 'fetch', desc: 'Descarga concurrente en red de todos los metadatos y actualizaciones del origin.' },
+      { cmd: 'pull', desc: 'Avanza hacia el último commit remoto (Fast-Forward) previniendo y resolviendo colisiones.' },
+      { cmd: 'checkout', desc: 'Mueve todos los repositorios simultáneamente hacia una rama específica.' },
+      { cmd: 'current-branch', desc: 'Despliega una matriz visual delineando la topografía actual de tus ramas de código.' },
+      { cmd: 'clean', desc: 'Itera para destruir archivos no trackeados (Operación altamente destructiva).' },
+      { cmd: 'ci-status', desc: 'Intercepta en tiempo real los reportes de estado (PASS/FAIL) reportados por el CI Pipeline.' },
+      { cmd: 'export', desc: 'Mapea a profundidad y construye un `snapshot.json` con la radiografía exacta del ecosistema.' },
+      { cmd: 'restore', desc: 'Rescata y reconstruye toda la infraestructura basada en un snapshot estructural previo.' },
+      { cmd: 'auth', desc: 'Ancla criptográficamente tus claves PAT y certificados para autorización local en GitHub/GitLab.' },
+    ]
   },
-  { 
-    icon: '<svg class="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>', 
-    title: 'Persistencia Automática', 
-    desc: 'Recuerda silenciosamente el último directorio trabajado para omitir rutas en futuros procesos.' 
-  },
-  { 
-    icon: '<svg class="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>', 
-    title: 'Manejo de Autenticación', 
-    desc: 'Soporta acceso a privados registrando un PAT en la variable global sin interrumpir descargas.' 
-  },
-  { 
-    icon: '<svg class="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>', 
-    title: 'Autoprotección', 
-    desc: 'Interfaz interactiva con barreras dinámicas para operaciones y borrados destructivos.' 
-  },
-];
+  en: {
+    navDocs: "Infrastructure",
+    navCmds: "Commands",
+    navRepo: "Repository",
+    heroBadge: "GitBulk 1.2.0 is now live",
+    heroTitleHtml: 'Master all your repositories with <span class="text-gradient inline-block font-black">GitBulk</span>',
+    heroDesc: "A professional-grade command-line tool architected for DevOps engineers. Automate, synchronize, and effortlessly manage dozens of repositories concurrently minus the friction.",
+    installQuick: "Quick Install",
+    tabWin: "Windows",
+    tabLin: "Linux / macOS",
+    featsTag: "Advanced Engineering",
+    featsTitle: "High-Performance Architecture",
+    featsDesc: "GitBulk mitigates latency and the repetitive fatigue of managing massive microservice ecosystems with an uncompromising focus on raw speed and security.",
+    f1Title: "Concurrent Execution",
+    f1Desc: "Leverage multiple CPU threads to process hundreds of repositories in milliseconds. Leave slow, linear bash scripts confidently in the past.",
+    f2Title: "State Persistence",
+    f2Desc: "Silently caches your last working environment state to guarantee instant jump-backs in future sessions without path re-entries.",
+    f3Title: "Integrated PAT Handling",
+    f3Desc: "Seamless automated authentication to private repositories without bottlenecking or disrupting complex parallel download flows.",
+    f4Title: "Active Self-Protection",
+    f4Desc: "Dynamic confirmation barriers and interactive logical prompts prevent catastrophic errors during hyper-destructive operations (e.g. forced `clean`).",
+    cmdTag: "CLI Reference",
+    cmdTitle: "Massive Tooling",
+    cmdDesc: "Streamline your CI/CD pipeline and daily workflow by executing transactional actions across your entire repository environment.",
+    colExec: "Executable",
+    colProp: "Functional Outline",
+    footTitle: "GitBulk Dev Tools",
+    footSub: "Professional CLI Version v1.2.0",
+    footBuild: "Engineered for uncompromising speed and reliability.",
+    footDev: "Developed and maintained by",
+    cmds: [
+      { cmd: 'status', desc: 'Instantly analyzes commit state and upstream divergence across all projects.' },
+      { cmd: 'fetch', desc: 'Concurrently downloads network metadata and origin parity updates.' },
+      { cmd: 'pull', desc: 'Fast-forwards to the latest remote commit smoothly, resolving overlaps on the fly.' },
+      { cmd: 'checkout', desc: 'Simultaneously pivots all your repositories targeted gracefully to a specified branch.' },
+      { cmd: 'current-branch', desc: 'Outputs a visual layout matrix mapping your entire branch topography.' },
+      { cmd: 'clean', desc: 'Iteratively wipes out non-tracked or tainted files (Highly destructive manipulation).' },
+      { cmd: 'ci-status', desc: 'Directly hooks in to scope out real-time (PASS/FAIL) reports from configured CI Pipelines.' },
+      { cmd: 'export', desc: 'Builds a deeply-mapped `snapshot.json` outlining the total metadata configuration.' },
+      { cmd: 'restore', desc: 'Fully rescues infrastructure deploying the complete environment based on a prior snapshot.' },
+      { cmd: 'auth', desc: 'Securely and locally anchors your developer PAT tokens to guarantee unhindered GitHub/GitLab access.' },
+    ]
+  }
+};
 
 // -- Renders --
-const renderHeader = () => `
-  <header class="w-full border-b border-[#222] bg-[#101010]/80 backdrop-blur-md sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <img src="/logo.svg" alt="GitBulk Logo" class="w-8 h-8 rounded" />
-        <span class="text-xl font-bold tracking-tight text-white">GitBulk</span>
+const renderHeader = (t: typeof dict.es) => `
+  <header class="w-full border-b border-border/60 dark:border-white/5 bg-background/60 backdrop-blur-xl fixed top-0 z-50 transition-all duration-300" id="navbar">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-4 group cursor-pointer">
+        <div class="relative w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 rounded-xl border border-border dark:border-white/10 overflow-hidden shadow-lg group-hover:border-primary/50 transition-colors">
+          <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <img src="/logo.svg" alt="GitBulk Logo" class="w-6 h-6 object-contain relative z-10 ${state.theme === 'light' ? 'brightness-0' : ''}" />
+        </div>
+        <span class="text-2xl font-display font-bold tracking-tight text-foreground">${state.theme === 'light' ? 'GitBulk' : 'GitBulk'}</span>
       </div>
-      <nav class="flex gap-6 text-sm font-medium text-gray-400">
-        <a href="#features" class="hover:text-emerald-400 transition-colors">Características</a>
-        <a href="#commands" class="hover:text-emerald-400 transition-colors">Comandos</a>
-        <a href="https://github.com/rezzt-dev/gitbulk-project" target="_blank" class="hover:text-emerald-400 transition-colors flex items-center gap-1">
-          GitHub
-          <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02.8-.22 1.65-.33 2.5-.33.85 0 1.7.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.65.7 1.03 1.59 1.03 2.68 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z"/></svg>
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-500 dark:text-zinc-400">
+        <a href="#features" class="hover:text-primary transition-colors">${t.navDocs}</a>
+        <a href="#commands" class="hover:text-primary transition-colors">${t.navCmds}</a>
+        <a href="/docs/index.html" class="hover:text-primary transition-colors text-primary/80">Documentación</a>
+        
+        <div class="w-px h-4 bg-border"></div>
+
+        <button id="btn-theme" class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-foreground">
+          ${state.theme === 'dark' ? icons.sun : icons.moon}
+        </button>
+
+        <button id="btn-lang" class="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-foreground border border-border/50 dark:border-white/5 uppercase text-xs font-bold font-mono">
+          ${icons.translate} ${state.lang}
+        </button>
+
+        <a href="https://github.com/rezzt-dev/gitbulk-project" target="_blank" class="flex items-center gap-2 text-primary-foreground bg-primary hover:bg-emerald-600 px-4 py-2 rounded-full shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95 ml-2">
+          ${icons.github}
+          <span>${t.navRepo}</span>
+        </a>
+      </nav>
+      <!-- Mobile Menu Button -->
+      <button id="btn-mobile" class="md:hidden text-slate-500 dark:text-zinc-400 hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 p-2 rounded-lg transition-colors">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+      </button>
+    </div>
+    <!-- Mobile Dropdown Menu -->
+    <div id="mobile-menu" class="hidden absolute top-[100%] left-0 w-full bg-background/95 backdrop-blur-xl border-b border-border/60 dark:border-white/5 py-6 px-6 shadow-2xl transition-all">
+      <nav class="flex flex-col gap-4 text-center items-center font-medium">
+        <a href="#features" class="w-full py-3 hover:text-primary transition-colors hover:bg-black/5 dark:hover:bg-white/5 rounded-xl border border-transparent">${t.navDocs}</a>
+        <a href="#commands" class="w-full py-3 hover:text-primary transition-colors hover:bg-black/5 dark:hover:bg-white/5 rounded-xl border border-transparent">${t.navCmds}</a>
+        <a href="/docs/index.html" class="w-full py-3 hover:text-primary transition-colors text-primary/80 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl border border-transparent">Documentación</a>
+        <div class="h-px w-2/3 bg-border/50 my-2"></div>
+        <div class="flex items-center gap-6 justify-center w-full">
+          <button id="btn-theme-mobile" class="flex items-center justify-center w-12 h-12 bg-white dark:bg-zinc-900 border border-border dark:border-white/5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-foreground shadow-sm">
+            ${state.theme === 'dark' ? icons.sun : icons.moon}
+          </button>
+          <button id="btn-lang-mobile" class="flex items-center gap-2 px-6 py-3 bg-white dark:bg-zinc-900 border border-border dark:border-white/5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-foreground uppercase text-sm font-bold font-mono shadow-sm">
+            ${icons.translate} ${state.lang}
+          </button>
+        </div>
+        <a href="https://github.com/rezzt-dev/gitbulk-project" target="_blank" class="w-full flex items-center justify-center gap-2 text-primary-foreground bg-primary hover:bg-emerald-600 px-6 py-4 rounded-xl mt-4 shadow-lg shadow-emerald-500/20 transition-all font-semibold">
+          ${icons.github}
+          <span>${t.navRepo}</span>
         </a>
       </nav>
     </div>
   </header>
 `;
 
-const renderHero = () => `
-  <section class="relative pt-32 pb-20 px-6 max-w-6xl mx-auto flex flex-col items-center text-center">
-    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/10 via-[#101010] to-[#101010] -z-10 h-[500px]"></div>
+const renderHero = (t: typeof dict.es) => `
+  <section class="relative min-h-[100dvh] pt-24 pb-16 px-4 md:px-6 max-w-7xl mx-auto flex flex-col items-center justify-center text-center overflow-hidden">
+    <!-- Glowing background orb -->
+    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/10 dark:bg-primary/10 blur-[100px] rounded-[100%] pointer-events-none -z-10 animate-pulse-glow"></div>
     
-    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium mb-8">
-      <span class="flex w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-      CLI de Gestión Masiva
+    <div class="animate-fade-in-up">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-semibold mb-8 hover:bg-primary/15 transition-colors cursor-default backdrop-blur-md shadow-sm">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+        </span>
+        ${t.heroBadge}
+      </div>
     </div>
 
-    <h1 class="text-5xl md:text-7xl font-black tracking-tight text-white mb-6 max-w-4xl">
-      Domina todos tus repositorios con <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">GitBulk</span>.
+    <h1 class="text-5xl sm:text-7xl lg:text-8xl font-display font-extrabold tracking-tight text-foreground mb-8 max-w-5xl leading-[1.05] animate-fade-in-up reveal-delay-100 drop-shadow-sm">
+      ${t.heroTitleHtml}
     </h1>
     
-    <p class="text-lg md:text-xl text-gray-400 max-w-2xl mb-12">
-      Una herramienta profesional de línea de comandos en Python para gestionar y actualizar múltiples repositorios Git de forma masiva y concurrente.
+    <p class="text-lg md:text-xl text-slate-600 dark:text-zinc-400 max-w-2xl mb-12 animate-fade-in-up reveal-delay-200 font-light leading-relaxed">
+      ${t.heroDesc}
     </p>
 
-    <div class="w-full max-w-2xl rounded-xl border border-[#222] bg-[#131313]/90 shadow-2xl overflow-hidden backdrop-blur-xl">
-      <div class="flex items-center justify-between px-4 py-3 border-b border-[#222] bg-[#131313]">
-        <div class="flex gap-2">
-          <div class="w-3 h-3 rounded-full bg-[#333]"></div>
-          <div class="w-3 h-3 rounded-full bg-[#333]"></div>
-          <div class="w-3 h-3 rounded-full bg-[#333]"></div>
+    <!-- CLI Mockup -->
+    <div class="w-full max-w-3xl glass-panel rounded-2xl overflow-hidden mt-8 animate-fade-in-up reveal-delay-300 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-700 mx-auto text-left relative z-10 group bg-surface/80 dark:bg-zinc-950/80">
+      <!-- Window Controls -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-border/80 dark:border-white/5 bg-slate-100/80 dark:bg-zinc-950/80 backdrop-blur-md">
+        <div class="flex gap-2.5">
+          <div class="w-3.5 h-3.5 rounded-full bg-rose-500/80 border border-rose-500/50 shadow-sm"></div>
+          <div class="w-3.5 h-3.5 rounded-full bg-amber-500/80 border border-amber-500/50 shadow-sm"></div>
+          <div class="w-3.5 h-3.5 rounded-full bg-emerald-500/80 border border-emerald-500/50 shadow-sm"></div>
         </div>
-        <div class="flex gap-1 bg-[#1c1c1c] p-1 rounded-lg">
-          <button id="tab-windows" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${initialOs === 'windows' ? 'bg-[#333] text-white' : 'text-gray-400 hover:text-gray-200'}">Windows</button>
-          <button id="tab-linux" class="px-3 py-1 text-xs font-medium rounded-md transition-colors ${initialOs === 'linux' ? 'bg-[#333] text-white' : 'text-gray-400 hover:text-gray-200'}">Linux / macOS</button>
+        <div class="flex gap-1.5 bg-slate-200/50 dark:bg-zinc-900/80 p-1 rounded-lg border border-border/50 dark:border-white/5">
+          <button id="tab-windows" class="px-2 md:px-4 py-1.5 text-[10px] md:text-xs font-semibold rounded-md transition-all ${state.os === 'windows' ? 'bg-white dark:bg-zinc-800 text-foreground shadow-sm ring-1 ring-border dark:ring-white/10' : 'text-slate-500 dark:text-zinc-500 hover:text-foreground hover:bg-white/50 dark:hover:bg-zinc-800/50'}">${t.tabWin}</button>
+          <button id="tab-linux" class="px-2 md:px-4 py-1.5 text-[10px] md:text-xs font-semibold rounded-md transition-all ${state.os === 'linux' ? 'bg-white dark:bg-zinc-800 text-foreground shadow-sm ring-1 ring-border dark:ring-white/10' : 'text-slate-500 dark:text-zinc-500 hover:text-foreground hover:bg-white/50 dark:hover:bg-zinc-800/50'}">${t.tabLin}</button>
         </div>
+        <div class="hidden sm:block w-[60px]"></div> <!-- Spacer to center the tabs perfectly on desktop -->
       </div>
-      <div class="p-4 py-5 text-left font-mono text-sm overflow-x-auto relative group">
-        <code id="install-code" class="text-emerald-300"></code>
-        <button id="copy-btn" class="absolute top-[50%] -translate-y-[50%] right-4 p-2 rounded-md bg-[#222] text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#333] border border-[#333]" title="Copiar al portapapeles">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-        </button>
+      <!-- Code Area -->
+      <div class="p-6 md:p-8 font-mono text-[13px] md:text-[15px] leading-relaxed relative bg-slate-50/50 dark:bg-black/60 group">
+        <div class="flex items-center gap-3 text-primary mb-2 font-semibold">
+          <span class="text-pink-600 dark:text-pink-500">❯</span>
+          <span class="text-cyan-600 dark:text-cyan-400">${t.installQuick}</span>
+        </div>
+        <div class="relative py-2 pl-6 border-l-2 border-slate-300 dark:border-zinc-800/50">
+          <code id="install-code" class="text-slate-800 dark:text-zinc-300 block overflow-x-auto whitespace-pre font-medium"></code>
+          <button id="copy-btn" class="absolute top-1/2 -translate-y-1/2 right-2 p-2.5 rounded-lg bg-white/80 dark:bg-zinc-800/50 text-slate-500 dark:text-zinc-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-white dark:hover:bg-zinc-700 hover:text-foreground border border-border shadow-sm dark:border-white/5 backdrop-blur-md" title="Copiar / Copy">
+            ${icons.copy}
+          </button>
+        </div>
       </div>
     </div>
   </section>
 `;
 
-const renderFeatures = () => `
-  <section id="features" class="py-20 px-6 max-w-6xl mx-auto">
-    <div class="mb-12 text-center md:text-left">
-      <h2 class="text-3xl font-bold text-white mb-4">Arquitectura de Alto Rendimiento</h2>
-      <p class="text-gray-400 max-w-2xl">GitBulk mitiga la latencia y la fatiga repetitiva de gestionar arquitecturas masivas de microservicios con una estructura sólida.</p>
+const renderBentoFeatures = (t: typeof dict.es) => {
+  const featsData = [
+    { icon: icons.cpu, title: t.f1Title, desc: t.f1Desc, span: 'col-span-1 md:col-span-2', bg: 'bg-gradient-to-br from-slate-100 to-white dark:from-zinc-900/80 dark:to-zinc-800/20' },
+    { icon: icons.database, title: t.f2Title, desc: t.f2Desc, span: 'col-span-1', bg: 'bg-white dark:bg-zinc-900/40' },
+    { icon: icons.key, title: t.f3Title, desc: t.f3Desc, span: 'col-span-1', bg: 'bg-white dark:bg-zinc-900/40' },
+    { icon: icons.shield, title: t.f4Title, desc: t.f4Desc, span: 'col-span-1 md:col-span-2', bg: 'bg-gradient-to-tr from-emerald-50 dark:from-emerald-950/20 to-white dark:to-zinc-900/40' }
+  ];
+
+  return `
+    <section id="features" class="py-32 px-6 max-w-7xl mx-auto border-t border-border/50 dark:border-white/5 relative">
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+      
+      <div class="mb-20 text-center reveal">
+        <h2 class="text-amber-600 dark:text-amber-500 font-bold tracking-widest text-xs uppercase mb-3">${t.featsTag}</h2>
+        <h3 class="text-3xl md:text-5xl font-display font-bold text-foreground mb-6">${t.featsTitle}</h3>
+        <p class="text-slate-600 dark:text-zinc-400 max-w-2xl mx-auto text-lg leading-relaxed font-light">
+          ${t.featsDesc}
+        </p>
+      </div>
+      
+      <!-- Bento Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[250px]">
+        ${featsData.map((f, i) => `
+          <div class="glass-card rounded-2xl p-8 relative overflow-hidden group ${f.span} ${f.bg} reveal" style="transition-delay: ${i * 100}ms">
+            <!-- Background hover effect -->
+            <div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+            
+            <div class="relative z-10 h-full flex flex-col justify-between">
+              <div class="w-14 h-14 rounded-xl bg-white dark:bg-zinc-950/50 border border-border dark:border-white/5 shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 ease-out">
+                ${f.icon}
+              </div>
+              <div>
+                <h4 class="text-xl font-display font-bold text-foreground mb-3">${f.title}</h4>
+                <p class="text-sm text-slate-600 dark:text-zinc-400 leading-relaxed font-light group-hover:text-slate-800 dark:group-hover:text-zinc-300 transition-colors">${f.desc}</p>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+  `;
+};
+
+const renderCommands = (t: typeof dict.es) => `
+  <section id="commands" class="py-32 px-6 max-w-5xl mx-auto relative reveal">
+    <div class="mb-16 text-center">
+      <h2 class="text-cyan-600 dark:text-cyan-400 font-bold tracking-widest text-xs uppercase mb-3">${t.cmdTag}</h2>
+      <h3 class="text-3xl md:text-5xl font-display font-bold text-foreground mb-6">${t.cmdTitle}</h3>
+      <p class="text-slate-600 dark:text-zinc-400 text-lg font-light">${t.cmdDesc}</p>
     </div>
+
+    <div class="glass-panel rounded-2xl overflow-hidden shadow-2xl relative z-10 bg-white/80 dark:bg-surface/50 border border-border dark:border-white/10">
+      <div class="bg-slate-100/50 dark:bg-zinc-950/50 px-6 py-4 border-b border-border dark:border-white/5 flex items-center justify-between">
+        <span class="text-xs font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest">${t.colExec}</span>
+        <span class="text-xs font-bold text-slate-500 dark:text-zinc-500 uppercase tracking-widest hidden sm:block">${t.colProp}</span>
+      </div>
+      <div class="divide-y divide-border/60 dark:divide-white/5 bg-white/40 dark:bg-zinc-900/20 backdrop-blur-sm">
+        ${t.cmds.map(cmd => `
+          <div class="flex flex-col sm:flex-row sm:items-center p-6 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors group">
+            <div class="sm:w-1/3 mb-3 sm:mb-0">
+              <code class="text-primary bg-primary/10 px-3 py-1.5 rounded-md text-sm font-mono border border-primary/20 group-hover:border-primary/50 transition-colors inline-block shadow-sm">
+                gitbulk ${cmd.cmd}
+              </code>
+            </div>
+            <div class="sm:w-2/3 text-sm text-slate-600 dark:text-zinc-400 leading-relaxed font-light group-hover:text-slate-900 dark:group-hover:text-zinc-300 transition-colors">
+              ${cmd.desc}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  </section>
+`;
+
+const renderFooter = (t: typeof dict.es) => `
+  <footer class="border-t border-border dark:border-white/5 bg-slate-50 dark:bg-zinc-950 pt-16 pb-8 px-6 mt-auto relative overflow-hidden">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-4/5 h-px bg-gradient-to-r from-transparent via-border dark:via-white/10 to-transparent"></div>
     
-    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-      ${features.map(f => `
-        <div class="p-6 rounded-2xl bg-[#131313] border border-[#222] hover:border-emerald-500/30 transition-colors group">
-          <div class="mb-5 opacity-80 group-hover:opacity-100 group-hover:-translate-y-1 transition-all">${f.icon}</div>
-          <h3 class="text-lg font-semibold text-gray-200 mb-2">${f.title}</h3>
-          <p class="text-sm text-gray-400 leading-relaxed">${f.desc}</p>
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 relative z-10">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 bg-white dark:bg-zinc-900 rounded-lg flex items-center justify-center border border-border/80 dark:border-white/5 shadow-sm">
+          <img src="/logo.svg" alt="GitBulk Logo" class="w-5 h-5 opacity-70 grayscale ${state.theme === 'light' ? 'brightness-0' : ''}" />
         </div>
-      `).join('')}
-    </div>
-  </section>
-`;
-
-const renderCommands = () => `
-  <section id="commands" class="py-20 px-6 max-w-4xl mx-auto">
-    <div class="mb-12 text-center">
-      <h2 class="text-3xl font-bold text-white mb-4">Comandos Masivos</h2>
-      <p class="text-gray-400">Simplifica tu flujo de trabajo procesando cientos de repositorios en 1 solo un clic.</p>
-    </div>
-
-    <div class="rounded-xl border border-[#222] overflow-hidden bg-[#131313]">
-      <table class="w-full text-left max-w-full">
-        <thead>
-          <tr class="bg-[#1c1c1c]/50 text-gray-300 text-sm border-b border-[#222]">
-            <th class="px-6 py-4 font-medium">Comando</th>
-            <th class="px-6 py-4 font-medium hidden sm:table-cell">Descripción</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-[#222]">
-          ${commands.map(cmd => `
-            <tr class="hover:bg-[#1a1a1a] transition-colors">
-              <td class="px-6 py-4 align-top">
-                <code class="text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded text-sm whitespace-nowrap border border-emerald-400/10">${cmd.cmd}</code>
-                <p class="text-sm text-gray-400 mt-2 sm:hidden">${cmd.desc}</p>
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-400 hidden sm:table-cell">${cmd.desc}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  </section>
-`;
-
-const renderFooter = () => `
-  <footer class="border-t border-[#222] bg-[#101010] py-12 px-6 mt-auto">
-    <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-      <div class="flex items-center gap-3">
-        <img src="/logo.svg" alt="GitBulk Logo" class="w-6 h-6 grayscale opacity-50" />
-        <span class="text-gray-500 font-medium text-sm">GitBulk Developer Tools</span>
+        <div>
+          <span class="text-slate-800 dark:text-zinc-200 font-display font-semibold block">${t.footTitle}</span>
+          <span class="text-slate-500 dark:text-zinc-500 text-xs">${t.footSub}</span>
+        </div>
       </div>
-      <div class="flex flex-col items-center md:items-end gap-1 text-center md:text-right">
-        <p class="text-gray-500 text-sm">Construido para velocidad y fiabilidad extrema.</p>
-        <p class="text-gray-500 text-sm">Desarrollado por <a href="https://github.com/rezzt-dev" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:text-emerald-300 transition-colors font-medium">rezzt.dev</a></p>
+      
+      <div class="flex items-center gap-6">
+        <p class="text-slate-500 dark:text-zinc-500 text-sm font-light text-center md:text-right">
+          ${t.footBuild}<br/>
+          ${t.footDev} <a href="https://github.com/rezzt-dev" target="_blank" rel="noopener noreferrer" class="text-primary hover:text-emerald-400 hover:underline transition-all font-medium inline-flex items-center gap-1">rezzt.dev</a>
+        </p>
       </div>
     </div>
   </footer>
 `;
 
 // -- Mounting and Logic --
-const initApp = () => {
-  const app = document.querySelector<HTMLDivElement>('#app')!;
-  
-  app.innerHTML = `
-    ${renderHeader()}
-    <main class="flex-1">
-      ${renderHero()}
-      ${renderFeatures()}
-      ${renderCommands()}
-    </main>
-    ${renderFooter()}
-  `;
-
-  // OS Logic Handler
+const attachListeners = () => {
   const codeEl = document.getElementById('install-code')!;
   const tabWin = document.getElementById('tab-windows')!;
   const tabLin = document.getElementById('tab-linux')!;
   const copyBtn = document.getElementById('copy-btn')!;
+  
+  // Mobile / Desktop Buttons
+  const btnTheme = document.getElementById('btn-theme')!;
+  const btnThemeMob = document.getElementById('btn-theme-mobile')!;
+  const btnLang = document.getElementById('btn-lang')!;
+  const btnLangMob = document.getElementById('btn-lang-mobile')!;
+  const btnMobile = document.getElementById('btn-mobile')!;
+  const mobileMenu = document.getElementById('mobile-menu')!;
 
   const scripts = {
     windows: 'iwr -useb "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/cli/install.ps1" | iex',
     linux: 'curl -fsSL "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/cli/install.sh" | sh'
   };
 
-  let activeOs = initialOs;
+  const updateScriptsConfig = () => {
+    codeEl.textContent = scripts[state.os];
+    // Dynamic classes based on OS and Theme! Re-rendered on OS switch.
+    // The renderHero sets active states. Rather than changing classes manually here, 
+    // it's cleaner to just re-render Hero or manually swap classes. We'll manually swap to avoid re-initializing observers.
+    const activeClass = "px-4 py-1.5 text-xs font-semibold rounded-md transition-all bg-white dark:bg-zinc-800 text-foreground shadow-sm ring-1 ring-border dark:ring-white/10";
+    const inactiveClass = "px-4 py-1.5 text-xs font-semibold rounded-md transition-all text-slate-500 dark:text-zinc-500 hover:text-foreground hover:bg-white/50 dark:hover:bg-zinc-800/50";
 
-  const updateScripts = (os: 'windows' | 'linux') => {
-    activeOs = os;
-    codeEl.textContent = scripts[os];
-    
-    if (os === 'windows') {
-      tabWin.className = "px-3 py-1 text-xs font-medium rounded-md transition-colors bg-[#333] text-white";
-      tabLin.className = "px-3 py-1 text-xs font-medium rounded-md transition-colors text-gray-400 hover:text-gray-200";
+    if (state.os === 'windows') {
+      tabWin.className = activeClass;
+      tabLin.className = inactiveClass;
     } else {
-      tabLin.className = "px-3 py-1 text-xs font-medium rounded-md transition-colors bg-[#333] text-white";
-      tabWin.className = "px-3 py-1 text-xs font-medium rounded-md transition-colors text-gray-400 hover:text-gray-200";
+      tabLin.className = activeClass;
+      tabWin.className = inactiveClass;
     }
   };
 
-  // Set Default
-  updateScripts(activeOs as 'windows' | 'linux');
+  updateScriptsConfig();
 
-  // Listeners
-  tabWin.addEventListener('click', () => updateScripts('windows'));
-  tabLin.addEventListener('click', () => updateScripts('linux'));
+  tabWin.addEventListener('click', () => { state.os = 'windows'; updateScriptsConfig(); });
+  tabLin.addEventListener('click', () => { state.os = 'linux'; updateScriptsConfig(); });
 
   copyBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(scripts[activeOs as 'windows' | 'linux']).then(() => {
-      copyBtn.innerHTML = '<svg class="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+    navigator.clipboard.writeText(scripts[state.os]).then(() => {
+      const originalHTML = copyBtn.innerHTML;
+      copyBtn.innerHTML = icons.check;
+      copyBtn.classList.add('text-emerald-500', 'border-emerald-500/50', 'bg-emerald-500/10');
       setTimeout(() => {
-        copyBtn.innerHTML = '<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>';
+        copyBtn.innerHTML = originalHTML;
+        copyBtn.classList.remove('text-emerald-500', 'border-emerald-500/50', 'bg-emerald-500/10');
       }, 2000);
+    });
+  });
+
+  // Switchers (Trigger a full re-render)
+  const toggleTheme = () => {
+    state.theme = state.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.classList.toggle('dark', state.theme === 'dark');
+    renderApp();
+  };
+  const toggleLang = () => {
+    state.lang = state.lang === 'es' ? 'en' : 'es';
+    renderApp();
+  };
+
+  btnTheme.addEventListener('click', toggleTheme);
+  btnThemeMob.addEventListener('click', toggleTheme);
+  
+  btnLang.addEventListener('click', toggleLang);
+  btnLangMob.addEventListener('click', toggleLang);
+
+  // Mobile Menu Toggle
+  btnMobile.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden');
+  });
+
+  // Mobile nav auto-close when a link is clicked
+  const mobileLinks = mobileMenu.querySelectorAll('a');
+  mobileLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      mobileMenu.classList.add('hidden');
     });
   });
 };
 
-initApp();
+const renderApp = () => {
+  const app = document.querySelector<HTMLDivElement>('#app')!;
+  const currentDict = dict[state.lang];
+  
+  // Ensure the document matches the state
+  document.documentElement.classList.toggle('dark', state.theme === 'dark');
+
+  app.innerHTML = `
+    ${renderHeader(currentDict)}
+    <main class="flex-1 w-full relative">
+      ${renderHero(currentDict)}
+      ${renderBentoFeatures(currentDict)}
+      ${renderCommands(currentDict)}
+    </main>
+    ${renderFooter(currentDict)}
+  `;
+
+  attachListeners();
+  reinitializeObservers();
+};
+
+const reinitializeObservers = () => {
+  const observerOptions = {
+    root: null,
+    rootMargin: '0px',
+    threshold: 0.1
+  };
+
+  const observer = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  document.querySelectorAll('.reveal').forEach((el) => {
+    observer.observe(el);
+  });
+
+  const navbar = document.getElementById('navbar');
+  if (navbar) {
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 20) {
+        navbar.classList.add('shadow-lg', 'bg-background/90');
+        navbar.classList.remove('bg-background/60');
+      } else {
+        navbar.classList.remove('shadow-lg', 'bg-background/90');
+        navbar.classList.add('bg-background/60');
+      }
+    });
+  }
+};
+
+// Initialize after DOM load
+document.addEventListener('DOMContentLoaded', renderApp);
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  renderApp(); // Fallback for fast HMR
+}

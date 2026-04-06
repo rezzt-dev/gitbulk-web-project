@@ -13,16 +13,40 @@
     --primary-foreground: 0 0% 100%; /* white */
     --surface: 0 0% 100%;      /* pure white */
     --border: 214 32% 91%;     /* slate-200 */
+    --terminal-bg: 0 0% 100%;  /* white */
+    --terminal-header: 210 40% 96.1%; /* slate-50 */
+    --terminal-border: 214.3 31.8% 91.4%; /* slate-200 */
+    --terminal-text: 222.2 47.4% 11.2%; /* slate-900 */
+    
+    /* Terminal Tokens Light */
+    --token-cmd: 160 84% 35%;
+    --token-flag: 38 92% 50%;
+    --token-url: 217 91% 60%;
+    --token-string: 262 83% 58%;
+    --token-operator: 330 81% 60%;
+    --token-comment: 215 16% 47%;
   }
 
   /* DARK MODE TOKENS (Deep Space) */
   .dark {
-    --background: 240 10% 4%;  /* zinc-950 */
+    --background: 240 10% 3.9%;  /* zinc-950 */
     --foreground: 0 0% 98%;    /* zinc-50 */
     --primary: 160 84% 39%;    /* emerald-500 */
     --primary-foreground: 162 91% 9%; /* emerald-950 */
     --surface: 240 6% 10%;     /* zinc-900 */
     --border: 240 4% 16%;      /* zinc-800 */
+    --terminal-bg: 240 10% 3.9%; /* zinc-950 */
+    --terminal-header: 240 5.9% 10%; /* zinc-900 */
+    --terminal-border: 240 3.7% 15.9%; /* zinc-800 */
+    --terminal-text: 0 0% 98%; /* zinc-50 */
+
+    /* Terminal Tokens Dark */
+    --token-cmd: 160 84% 39%;
+    --token-flag: 48 96% 89%;
+    --token-url: 214 95% 93%;
+    --token-string: 263 70% 50%; 
+    --token-operator: 326 100% 60%;
+    --token-comment: 240 5% 64.9%;
   }
 }
 
@@ -75,6 +99,7 @@
   
   .reveal-delay-100 { transition-delay: 100ms; }
   .reveal-delay-200 { transition-delay: 200ms; }
+  .reveal-delay-250 { transition-delay: 250ms; }
   .reveal-delay-300 { transition-delay: 300ms; }
   .reveal-delay-400 { transition-delay: 400ms; }
 
@@ -91,5 +116,54 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-slate-400 dark:bg-zinc-700;
+  }
+
+  /* Universal scrollbar styling for code blocks and containers */
+  pre::-webkit-scrollbar {
+    height: 5px;
+    width: 5px;
+  }
+  
+  pre::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 dark:bg-zinc-800 rounded-full;
+  }
+
+  pre::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  /* Professional Terminal Mockup Styles */
+  .terminal-window {
+    @apply bg-[hsl(var(--terminal-bg))] border border-[hsl(var(--terminal-border))] shadow-2xl rounded-2xl overflow-hidden ring-1 ring-black/5 dark:ring-white/5;
+  }
+  
+  .terminal-header {
+    @apply border-b border-[hsl(var(--terminal-border))] bg-[hsl(var(--terminal-header))] backdrop-blur-md px-5 py-4 flex items-center justify-between;
+  }
+  
+  .terminal-body {
+    @apply p-8 font-mono text-[14px] leading-relaxed relative bg-[hsl(var(--terminal-bg))] text-[hsl(var(--terminal-text))];
+  }
+  
+  .code-token-cmd      { color: hsl(var(--token-cmd)); } 
+  .code-token-flag     { color: hsl(var(--token-flag)); } 
+  .code-token-url      { color: hsl(var(--token-url)); } 
+  .code-token-string   { color: hsl(var(--token-string)); } 
+  .code-token-operator { color: hsl(var(--token-operator)); } 
+  .code-token-comment  { color: hsl(var(--token-comment)); } 
+  
+  .terminal-cursor {
+    @apply inline-block w-2.5 h-5 bg-primary/80 ml-1.5 align-middle;
+    animation: terminal-blink 1s step-end infinite;
+  }
+  
+  @keyframes terminal-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .typing-text::after {
+    content: "|";
+    @apply animate-pulse text-primary;
   }
 }

@@ -8,12 +8,21 @@ interface AppState {
   lang: 'es' | 'en';
   theme: 'dark' | 'light';
   os: 'windows' | 'linux';
+  version: 'cli' | 'gui';
 }
+// -- Initialization from LocalStorage --
+const savedLang = localStorage.getItem('gitbulk-lang') as 'es' | 'en' | null;
+const savedTheme = localStorage.getItem('gitbulk-theme') as 'dark' | 'light' | null;
+
 let state: AppState = {
-  lang: 'es',
-  theme: 'dark', // Always startup in dark mode for premium feel
-  os: isUnix ? 'linux' : 'windows'
+  lang: savedLang || 'es',
+  theme: savedTheme || 'dark', // Always startup in dark mode for premium feel if no choice
+  os: isUnix ? 'linux' : 'windows',
+  version: 'gui' // Start with GUI by default
 };
+
+// Initial sync of document classes
+document.documentElement.classList.toggle('dark', state.theme === 'dark');
 
 // -- SVG Icons (Phosphor/Lucide style) --
 const icons = {
@@ -26,7 +35,9 @@ const icons = {
   github: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02.8-.22 1.65-.33 2.5-.33.85 0 1.7.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.65.7 1.03 1.59 1.03 2.68 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z"/></svg>',
   sun: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
   moon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
-  translate: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>'
+  translate: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>',
+  terminal: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>',
+  monitor: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>'
 };
 
 // -- Dictionary (i18n) --
@@ -37,10 +48,13 @@ const dict = {
     navRepo: "Repositorio",
     heroBadge: "GitBulk 1.2.0 ya está disponible",
     heroTitleHtml: 'Domina todos tus repositorios con <span class="text-gradient inline-block font-black">GitBulk</span>',
-    heroDesc: "Una herramienta profesional de línea de comandos diseñada para ingenieros DevOps. Automatiza, sincroniza y gestiona docenas de repositorios concurrentemente sin fricción.",
+    heroDesc: "Una herramienta profesional diseñada para ingenieros DevOps. Automatiza, sincroniza y gestiona docenas de repositorios concurrentemente sin fricción.",
     installQuick: "Instalación Rápida",
     tabWin: "Windows",
     tabLin: "Linux / macOS",
+    tabCLI: "Terminal (CLI)",
+    tabGUI: "Escritorio (GUI)",
+    guiBadge: "NUEVO",
     featsTag: "Ingeniería Avanzada",
     featsTitle: "Arquitectura de Alto Rendimiento",
     featsDesc: "GitBulk mitiga la latencia y la fatiga repetitiva de gestionar arquitecturas masivas de microservicios con un diseño enfocado en velocidad bruta y seguridad inquebrantable.",
@@ -80,10 +94,13 @@ const dict = {
     navRepo: "Repository",
     heroBadge: "GitBulk 1.2.0 is now live",
     heroTitleHtml: 'Master all your repositories with <span class="text-gradient inline-block font-black">GitBulk</span>',
-    heroDesc: "A professional-grade command-line tool architected for DevOps engineers. Automate, synchronize, and effortlessly manage dozens of repositories concurrently minus the friction.",
+    heroDesc: "A professional-grade tool architected for DevOps engineers. Automate, synchronize, and effortlessly manage dozens of repositories concurrently minus the friction.",
     installQuick: "Quick Install",
     tabWin: "Windows",
     tabLin: "Linux / macOS",
+    tabCLI: "Terminal (CLI)",
+    tabGUI: "Desktop (GUI)",
+    guiBadge: "NEW",
     featsTag: "Advanced Engineering",
     featsTitle: "High-Performance Architecture",
     featsDesc: "GitBulk mitigates latency and the repetitive fatigue of managing massive microservice ecosystems with an uncompromising focus on raw speed and security.",
@@ -119,11 +136,47 @@ const dict = {
   }
 };
 
+// -- Syntax Highlighting Logic --
+const highlightCommand = (cmd: string) => {
+  // Simple regex-based syntax highlighter for shell commands
+  return cmd
+    .replace(/(iwr|iex|curl|bash|sh)\b/g, '<span class="code-token-cmd">$1</span>')
+    .replace(/( -useb| -fsSL)\b/g, '<span class="code-token-flag">$1</span>')
+    .replace(/(https?:\/\/[^\s"|]+)/g, '<span class="code-token-url">$1</span>')
+    .replace(/(\|)/g, '<span class="code-token-operator">$1</span>')
+    .replace(/(".*?")/g, '<span class="code-token-string">$1</span>');
+};
+
+// -- Typing Animation Helper --
+let typingInterval: number | null = null;
+const typeCommand = (el: HTMLElement, fullText: string, onComplete?: () => void) => {
+  if (typingInterval) clearInterval(typingInterval);
+  
+  el.innerHTML = '';
+  let i = 0;
+  
+  // We type in chunks to make it feel fast but realistic
+  typingInterval = window.setInterval(() => {
+    if (i < fullText.length) {
+      // Type 2-3 chars at a time for speed
+      const chunk = fullText.slice(i, i + 3);
+      el.textContent += chunk;
+      i += 3;
+    } else {
+      clearInterval(typingInterval!);
+      typingInterval = null;
+      // After typing raw text, apply highlighting
+      el.innerHTML = highlightCommand(fullText);
+      if (onComplete) onComplete();
+    }
+  }, 20); // Fast interval
+};
+
 // -- Renders --
 const renderHeader = (t: typeof dict.es) => `
   <header class="w-full border-b border-border/60 dark:border-white/5 bg-background/60 backdrop-blur-xl fixed top-0 z-50 transition-all duration-300" id="navbar">
     <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-      <div class="flex items-center gap-4 group cursor-pointer">
+      <div class="flex items-center gap-4 group cursor-pointer" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
         <div class="relative w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-900 rounded-xl border border-border dark:border-white/10 overflow-hidden shadow-lg group-hover:border-primary/50 transition-colors">
           <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <img src="/logo.svg" alt="GitBulk Logo" class="w-6 h-6 object-contain relative z-10 ${state.theme === 'light' ? 'brightness-0' : ''}" />
@@ -202,32 +255,65 @@ const renderHero = (t: typeof dict.es) => `
       ${t.heroDesc}
     </p>
 
-    <!-- CLI Mockup -->
-    <div class="w-full max-w-3xl glass-panel rounded-2xl overflow-hidden mt-8 animate-fade-in-up reveal-delay-300 hover:shadow-2xl hover:shadow-primary/20 transition-all duration-700 mx-auto text-left relative z-10 group bg-surface/80 dark:bg-zinc-950/80">
-      <!-- Window Controls -->
-      <div class="flex items-center justify-between px-5 py-4 border-b border-border/80 dark:border-white/5 bg-slate-100/80 dark:bg-zinc-950/80 backdrop-blur-md">
-        <div class="flex gap-2.5">
-          <div class="w-3.5 h-3.5 rounded-full bg-rose-500/80 border border-rose-500/50 shadow-sm"></div>
-          <div class="w-3.5 h-3.5 rounded-full bg-amber-500/80 border border-amber-500/50 shadow-sm"></div>
-          <div class="w-3.5 h-3.5 rounded-full bg-emerald-500/80 border border-emerald-500/50 shadow-sm"></div>
+    <!-- Version Selection Tabs -->
+    <div class="flex items-center justify-center gap-3 mb-12 animate-fade-in-up reveal-delay-250">
+      <button id="version-gui" class="flex items-center gap-2 px-6 py-2.5 rounded-full border transition-all duration-300 font-medium ${state.version === 'gui' ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20 scale-105' : 'bg-surface/50 text-slate-500 border-border hover:border-primary/50'}">
+        ${icons.monitor}
+        <span>${t.tabGUI}</span>
+        <span class="text-[10px] bg-white/20 px-1.5 py-0.5 rounded text-white font-bold ml-1">${t.guiBadge}</span>
+      </button>
+      <button id="version-cli" class="flex items-center gap-2 px-6 py-2.5 rounded-full border transition-all duration-300 font-medium ${state.version === 'cli' ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20 scale-105' : 'bg-surface/50 text-slate-500 border-border hover:border-primary/50'}">
+        ${icons.terminal}
+        <span>${t.tabCLI}</span>
+      </button>
+    </div>
+
+    <!-- Redesigned Professional Terminal -->
+    <div class="w-full max-w-4xl terminal-window animate-fade-in-up reveal-delay-300 mx-auto text-left relative z-10 group">
+      <!-- Terminal Header -->
+      <div class="terminal-header">
+        <div class="flex gap-2">
+          <div class="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+          <div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+          <div class="w-3 h-3 rounded-full bg-[#27c93f]"></div>
         </div>
-        <div class="flex gap-1.5 bg-slate-200/50 dark:bg-zinc-900/80 p-1 rounded-lg border border-border/50 dark:border-white/5">
-          <button id="tab-windows" class="px-2 md:px-4 py-1.5 text-[10px] md:text-xs font-semibold rounded-md transition-all ${state.os === 'windows' ? 'bg-white dark:bg-zinc-800 text-foreground shadow-sm ring-1 ring-border dark:ring-white/10' : 'text-slate-500 dark:text-zinc-500 hover:text-foreground hover:bg-white/50 dark:hover:bg-zinc-800/50'}">${t.tabWin}</button>
-          <button id="tab-linux" class="px-2 md:px-4 py-1.5 text-[10px] md:text-xs font-semibold rounded-md transition-all ${state.os === 'linux' ? 'bg-white dark:bg-zinc-800 text-foreground shadow-sm ring-1 ring-border dark:ring-white/10' : 'text-slate-500 dark:text-zinc-500 hover:text-foreground hover:bg-white/50 dark:hover:bg-zinc-800/50'}">${t.tabLin}</button>
+        
+        <div class="flex items-center gap-4">
+          <div class="flex gap-1.5 bg-white/5 p-1 rounded-md border border-white/5">
+            <button id="tab-windows" class="px-3 py-1 text-[11px] font-semibold rounded transition-all ${state.os === 'windows' ? 'bg-white/10 text-white shadow-inner' : 'text-zinc-500 hover:text-zinc-300'}">${t.tabWin}</button>
+            <button id="tab-linux" class="px-3 py-1 text-[11px] font-semibold rounded transition-all ${state.os === 'linux' ? 'bg-white/10 text-white shadow-inner' : 'text-zinc-500 hover:text-zinc-300'}">${t.tabLin}</button>
+          </div>
+          <div class="hidden sm:flex items-center gap-2 text-[10px] text-zinc-500 font-mono italic">
+            ${icons.terminal} ~/gitbulk-deploy
+          </div>
         </div>
-        <div class="hidden sm:block w-[60px]"></div> <!-- Spacer to center the tabs perfectly on desktop -->
+        
+        <div class="w-16 hidden sm:block"></div> <!-- Balanced spacer -->
       </div>
-      <!-- Code Area -->
-      <div class="p-6 md:p-8 font-mono text-[13px] md:text-[15px] leading-relaxed relative bg-slate-50/50 dark:bg-black/60 group">
-        <div class="flex items-center gap-3 text-primary mb-2 font-semibold">
-          <span class="text-pink-600 dark:text-pink-500">❯</span>
-          <span class="text-cyan-600 dark:text-cyan-400">${t.installQuick}</span>
+
+      <!-- Terminal Body -->
+      <div class="terminal-body group">
+        <div class="flex items-start gap-3 mb-2">
+          <span class="text-emerald-500 font-bold">user@gitbulk</span>
+          <span class="text-zinc-500">:</span>
+          <span class="text-blue-400 font-bold">~</span>
+          <span class="text-zinc-500">$</span>
+          <div class="flex-1">
+             <code id="install-code" class="text-zinc-300 block overflow-x-auto whitespace-pre font-mono leading-relaxed min-h-[1.5em]"></code>
+          </div>
         </div>
-        <div class="relative py-2 pl-6 border-l-2 border-slate-300 dark:border-zinc-800/50">
-          <code id="install-code" class="text-slate-800 dark:text-zinc-300 block overflow-x-auto whitespace-pre font-medium"></code>
-          <button id="copy-btn" class="absolute top-1/2 -translate-y-1/2 right-2 p-2.5 rounded-lg bg-white/80 dark:bg-zinc-800/50 text-slate-500 dark:text-zinc-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-white dark:hover:bg-zinc-700 hover:text-foreground border border-border shadow-sm dark:border-white/5 backdrop-blur-md" title="Copiar / Copy">
-            ${icons.copy}
-          </button>
+        
+        <!-- Copy Button - Floating inside terminal -->
+        <button id="copy-btn" class="absolute bottom-6 right-6 flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-sm shadow-xl" title="Copiar / Copy">
+          ${icons.copy}
+          <span class="text-xs font-bold uppercase tracking-wider">Copy</span>
+        </button>
+
+        <!-- Status Hint -->
+        <div class="mt-8 flex items-center gap-3 text-[11px] text-zinc-600 font-mono border-t border-white/5 pt-4">
+          <span class="flex h-2 w-2 rounded-full bg-emerald-500/50 animate-pulse"></span>
+          Ready to install ${state.version === 'gui' ? 'GitBulk GUI' : 'GitBulk CLI'} v1.2.0
+          ${state.version === 'gui' ? '<span class="ml-auto text-zinc-700 italic">// High-performance desktop client</span>' : ''}
         </div>
       </div>
     </div>
@@ -277,7 +363,8 @@ const renderBentoFeatures = (t: typeof dict.es) => {
   `;
 };
 
-const renderCommands = (t: typeof dict.es) => `
+const renderCommands = (t: typeof dict.es) => {
+  return `
   <section id="commands" class="py-32 px-6 max-w-5xl mx-auto relative reveal">
     <div class="mb-16 text-center">
       <h2 class="text-cyan-600 dark:text-cyan-400 font-bold tracking-widest text-xs uppercase mb-3">${t.cmdTag}</h2>
@@ -307,6 +394,7 @@ const renderCommands = (t: typeof dict.es) => `
     </div>
   </section>
 `;
+}
 
 const renderFooter = (t: typeof dict.es) => `
   <footer class="border-t border-border dark:border-white/5 bg-slate-50 dark:bg-zinc-950 pt-16 pb-8 px-6 mt-auto relative overflow-hidden">
@@ -338,6 +426,10 @@ const attachListeners = () => {
   const codeEl = document.getElementById('install-code')!;
   const tabWin = document.getElementById('tab-windows')!;
   const tabLin = document.getElementById('tab-linux')!;
+  
+  const verCLI = document.getElementById('version-cli')!;
+  const verGUI = document.getElementById('version-gui')!;
+  
   const copyBtn = document.getElementById('copy-btn')!;
   
   // Mobile / Desktop Buttons
@@ -349,25 +441,27 @@ const attachListeners = () => {
   const mobileMenu = document.getElementById('mobile-menu')!;
 
   const scripts = {
-    windows: 'iwr -useb "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/cli/install.ps1" | iex',
-    linux: 'curl -fsSL "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/cli/install.sh" | sh'
+    cli: {
+        windows: 'iwr -useb "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/cli/install.ps1" | iex',
+        linux: 'curl -fsSL "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/cli/install.sh" | bash'
+    },
+    gui: {
+        windows: 'iwr -useb "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/gui/install.ps1" | iex',
+        linux: 'curl -fsSL "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/gui/install_linux.sh" | bash'
+    }
   };
 
   const updateScriptsConfig = () => {
-    codeEl.textContent = scripts[state.os];
-    // Dynamic classes based on OS and Theme! Re-rendered on OS switch.
-    // The renderHero sets active states. Rather than changing classes manually here, 
-    // it's cleaner to just re-render Hero or manually swap classes. We'll manually swap to avoid re-initializing observers.
-    const activeClass = "px-4 py-1.5 text-xs font-semibold rounded-md transition-all bg-white dark:bg-zinc-800 text-foreground shadow-sm ring-1 ring-border dark:ring-white/10";
-    const inactiveClass = "px-4 py-1.5 text-xs font-semibold rounded-md transition-all text-slate-500 dark:text-zinc-500 hover:text-foreground hover:bg-white/50 dark:hover:bg-zinc-800/50";
+    const currentScript = scripts[state.version][state.os];
+    // Use the typing effect for a pro feel
+    typeCommand(codeEl, currentScript);
 
-    if (state.os === 'windows') {
-      tabWin.className = activeClass;
-      tabLin.className = inactiveClass;
-    } else {
-      tabLin.className = activeClass;
-      tabWin.className = inactiveClass;
-    }
+    // Active/Inactive styles for OS tabs
+    const activeOS = "px-3 py-1 text-[11px] font-semibold rounded transition-all bg-white/10 text-white shadow-inner";
+    const inactiveOS = "px-3 py-1 text-[11px] font-semibold rounded transition-all text-zinc-500 hover:text-zinc-300";
+
+    tabWin.className = state.os === 'windows' ? activeOS : inactiveOS;
+    tabLin.className = state.os === 'linux' ? activeOS : inactiveOS;
   };
 
   updateScriptsConfig();
@@ -375,8 +469,11 @@ const attachListeners = () => {
   tabWin.addEventListener('click', () => { state.os = 'windows'; updateScriptsConfig(); });
   tabLin.addEventListener('click', () => { state.os = 'linux'; updateScriptsConfig(); });
 
+  verCLI.addEventListener('click', () => { state.version = 'cli'; renderApp(); });
+  verGUI.addEventListener('click', () => { state.version = 'gui'; renderApp(); });
+
   copyBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(scripts[state.os]).then(() => {
+    navigator.clipboard.writeText(scripts[state.version][state.os]).then(() => {
       const originalHTML = copyBtn.innerHTML;
       copyBtn.innerHTML = icons.check;
       copyBtn.classList.add('text-emerald-500', 'border-emerald-500/50', 'bg-emerald-500/10');
@@ -391,10 +488,12 @@ const attachListeners = () => {
   const toggleTheme = () => {
     state.theme = state.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.classList.toggle('dark', state.theme === 'dark');
+    localStorage.setItem('gitbulk-theme', state.theme);
     renderApp();
   };
   const toggleLang = () => {
     state.lang = state.lang === 'es' ? 'en' : 'es';
+    localStorage.setItem('gitbulk-lang', state.lang);
     renderApp();
   };
 
@@ -461,15 +560,16 @@ const reinitializeObservers = () => {
 
   const navbar = document.getElementById('navbar');
   if (navbar) {
-    window.addEventListener('scroll', () => {
-      if (window.scrollY > 20) {
-        navbar.classList.add('shadow-lg', 'bg-background/90');
-        navbar.classList.remove('bg-background/60');
-      } else {
-        navbar.classList.remove('shadow-lg', 'bg-background/90');
-        navbar.classList.add('bg-background/60');
-      }
-    });
+    const handleScroll = () => {
+        if (window.scrollY > 20) {
+          navbar.classList.add('shadow-lg', 'bg-background/90');
+          navbar.classList.remove('bg-background/60');
+        } else {
+          navbar.classList.remove('shadow-lg', 'bg-background/90');
+          navbar.classList.add('bg-background/60');
+        }
+    };
+    window.addEventListener('scroll', handleScroll);
   }
 };
 

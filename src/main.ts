@@ -46,7 +46,7 @@ const dict = {
     navDocs: "Infraestructura",
     navCmds: "Comandos",
     navRepo: "Repositorio",
-    heroBadge: "GitBulk 1.3.0 ya está disponible",
+    heroBadge: "GitBulk 1.4.0 ya está disponible",
     heroTitleHtml: 'Domina todos tus repositorios con <span class="text-gradient inline-block font-black">GitBulk</span>',
     heroDesc: "Una herramienta profesional diseñada para ingenieros DevOps. Automatiza, sincroniza y gestiona docenas de repositorios concurrentemente sin fricción.",
     installQuick: "Instalación Rápida",

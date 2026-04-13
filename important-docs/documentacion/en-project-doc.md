@@ -1,124 +1,178 @@
-# GitBulk Technical Documentation
+# GitBulk — Technical Documentation
 
 ## Table of Contents
-1. [Introduction](#introduction)
-2. [Key Features](#key-features)
-3. [Installation and Deployment](#installation-and-deployment)
-4. [Authentication Management](#authentication-management)
-5. [Operation Catalog](#operation-catalog)
-6. [Global Flags and Parameters](#global-flags-and-parameters)
-7. [Advanced Usage Scenarios](#advanced-usage-scenarios)
+
+1. [Executive Overview](#executive-overview)
+2. [Core Capabilities](#core-capabilities)
+3. [System Architecture](#system-architecture)
+4. [Installation & Deployment](#installation--deployment)
+5. [Authentication & Security](#authentication--security)
+6. [Workspace Management](#workspace-management)
+7. [Repository Groups & Topology](#repository-groups--topology)
+8. [Command Reference](#command-reference)
+9. [Global Flags & Configuration](#global-flags--configuration)
 
 ---
 
-## Introduction
+## Executive Overview
 
-GitBulk is a high-performance, integrated solution (CLI and GUI) built in Python for large-scale Git repository orchestration. Designed for microservice architectures and multi-repository environments, the tool mitigates operational latency through concurrent processing, enabling complete development lifecycles to be executed across hundreds of projects simultaneously and securely.
+**GitBulk** is an enterprise-grade orchestration platform for Git repository management, available as both a CLI tool and a native desktop GUI. It is purpose-built for organizations managing large-scale software infrastructure — from microservice backends and distributed frontend systems to multi-team monorepo environments.
+
+In environments with dozens or hundreds of active repositories, the operational overhead of managing each independently creates compounding inefficiency: engineers waste critical time running redundant commands, resolving environment drift, and diagnosing pipeline failures across disconnected workspaces. GitBulk eliminates this overhead entirely.
+
+By leveraging **hardware-aware concurrent processing**, GitBulk executes operations across your entire repository fleet simultaneously, reducing what would take minutes into sub-second operations. Its persistent workspace model, integrated authentication, and real-time CI visibility make it an essential tool for any engineering team operating at scale.
+
+> **Who is GitBulk for?**
+> — DevOps and Platform Engineering teams managing complex multi-repository architectures.
+> — Tech Leads and Staff Engineers who need fast, reliable environment synchronization.
+> — CI/CD pipeline administrators requiring unified status visibility across all services.
 
 ---
 
-## Key Features
+## Core Capabilities
 
-- **Concurrent Execution**: Engine based on `ThreadPoolExecutor` that eliminates bottlenecks in network and disk operations.
-- **Native Desktop Interface**: High-fidelity application for Windows and Linux environments, featuring dark mode support and real-time monitoring.
-- **Operational Resilience**: Built-in protection mechanisms with interactive prompts to prevent accidental data loss during destructive commands.
-- **High-Density Technical Reporting**: Visualization using the `rich` library, providing compact matrices, color-coded statuses, and progress telemetry.
-- **CI / GitHub Actions Integration**: Native status querying for pipelines directly from the terminal or the desktop interface.
+### Intelligent Concurrency Engine
+GitBulk's execution engine is built on native subprocess calls, bypassing high-overhead library abstractions. It automatically detects available hardware resources and distributes workloads across threads to maximize both disk I/O and network throughput. Operations that would take minutes running sequentially complete in seconds.
+
+### Persistent Workspace System
+A **workspace** is a saved snapshot of your entire working environment — the full set of repositories, their locations, and their state. Workspaces can be saved, restored, listed, deleted, and synchronized, allowing engineering teams to version their development environments with the same rigor as their code. Missing repositories are automatically cloned on load; repositories no longer in scope are safely archived on sync.
+
+### Integrated PAT Authentication
+GitBulk handles authentication centrally through Personal Access Tokens (PAT) stored securely in OS-level credentials. This eliminates the need for per-repository authentication configuration, enabling frictionless access to private organizational repositories — including those hosted on GitHub and GitLab.
+
+### Visual Conflict & Status Management
+Beyond automation, GitBulk provides interactive resolution flows for merge conflicts, commit dialogs, and destructive operations. Every action that may have irreversible consequences is gated behind a confirmation screen, ensuring operational safety in production-adjacent environments.
+
+### Native Multi-Language Interface
+The full interface — including the desktop GUI — is available in **Spanish, English (US/UK), German, and French**, enabling adoption by globally distributed engineering teams without localization friction.
 
 ---
 
-## Installation and Deployment
+## System Architecture
 
-### Recommended Installation (Web Installer)
+GitBulk's internal engine is designed around three foundational pillars:
 
-GitBulk provides optimized one-step installers that automatically configure binaries, shortcuts, and environment variables.
+| Component | Description |
+|---|---|
+| **Native Subprocess Engine** | Replaces library-dependent calls with direct OS-level subprocess management, eliminating version conflicts and maximizing performance. |
+| **UI Throttling (250ms batching)** | Render updates are batched at 250ms intervals, ensuring the interface remains fully responsive even when processing hundreds of concurrent operations. |
+| **SSH Agent Diagnostics** | GitBulk automatically detects and configures SSH agents on the host system, ensuring secure tunneling to remote repositories without manual intervention. |
+| **Icon & Asset Cache** | Visual resources are statically cached to eliminate repeated I/O on re-renders, contributing to a snappy, latency-free UI experience. |
 
-**Windows (PowerShell):**
+---
+
+## Installation & Deployment
+
+GitBulk offers one-line web installers for both Windows and Linux environments. No manual dependency resolution is required.
+
+### Windows (PowerShell) — GUI Installer
+
 ```powershell
-iwr -useb "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/gui/install.ps1" | iex
+iwr -useb "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/windows/install_gui.ps1" | iex
 ```
 
-**Linux (Bash):**
-```bash
-curl -fsSL "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/gui/install_linux.sh" | bash
-```
-
-### Setup from Source (Development)
-
-For development or customization environments, clone the repository and install the dependency tree:
+### Linux / macOS (Bash) — GUI Installer
 
 ```bash
-git clone https://github.com/rezzt-dev/gitbulk-project.git
-cd gitbulk-project
-pip install -r requirements.txt
+curl -fsSL "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/linux/install_gui.sh" | bash
 ```
+
+Both scripts bootstrap the full GitBulk environment, including the native GUI client and CLI binary, in a single execution. The installers are idempotent and safe to re-run for updates.
 
 ---
 
-## Authentication Management
+## Authentication & Security
 
-Certain operations (such as `fetch` on private repositories or `ci-status` queries) require valid credentials. GitBulk centralizes this management by requesting a Personal Access Token (PAT) once and storing it securely within the operating system's credentials.
+GitBulk uses a centralized authentication model. Credentials are stored in the host operating system's secure credential store and are never written to disk in plaintext.
 
-To configure the access environment:
 ```bash
 gitbulk auth
 ```
-This command configures the global Git helper, allowing subsequent operations to execute silently without credential prompt interruptions.
+
+Running this command initiates an interactive wizard that securely stores your PAT. Once configured, all subsequent operations — including cloning private repositories during workspace load/sync — authenticate automatically without user prompting.
+
+This model is compatible with both **GitHub** and **GitLab**, and supports token rotation without requiring reconfiguration of individual repository remotes.
 
 ---
 
-## Operation Catalog
+## Workspace Management
 
-### `status`
-Analyzes the working tree state and reports divergence relative to tracked remote branches.
-**States**: `[CLEAN]`, `[MODIFIED]`, `[AHEAD]`, `[BEHIND]`.
+Workspaces are the foundation of GitBulk's environment management model. They allow teams to define, capture, and reproduce exact repository topologies across machines and team members.
 
-### `fetch`
-Downloads remote history metadata without integrating changes into local branches.
-**States**: `[OK]`, `[UPDATES]`.
+### Lifecycle Commands
 
-### `pull`
-Updates the active branch using a `fast-forward only` integration strategy.
-**Suggested Flags**: `--autostash`.
+| Command | Behavior |
+|---|---|
+| `workspace save` | Captures the current directory topology and repository states into a named workspace file. |
+| `workspace load <name>` | Restores a workspace, automatically cloning any repositories not present on disk. |
+| `workspace sync` | Reconciles disk state against a reference workspace definition. Archives repositories not in scope. |
+| `workspace list` | Displays all saved workspaces with metadata (date saved, repository count, root path). |
+| `workspace delete <name>` | Permanently removes a saved workspace definition. |
 
-### `checkout`
-Performs a bulk transition of `HEAD` towards the specified branch.
-**Required Parameter**: `-b <branch_name>`.
-
-### `current-branch`
-Generates an ultra-compact topographic map showing the active branch and local/remote references.
-
-### `clean`
-**Destructive Operation**: Executes `git fetch --prune` and `git clean -xfd`. Removes dead remote references and untracked files. Requires interactive confirmation.
-
-### `ci-status`
-Asynchronous query to the GitHub API to report the status of continuous integration pipelines.
-**States**: `[PASS]`, `[FAIL]`, `[PEND]`, `[NONE]`.
-
-### `export` / `restore`
-Enables persistence and reconstruction of large-scale workspaces using JSON snapshot files. Useful for instant onboarding processes.
+**Use case:** An onboarding engineer can restore a fully configured development environment — all repositories, correct branches, correct structure — with a single command, reducing setup time from hours to seconds.
 
 ---
 
-## Global Flags and Parameters
+## Repository Groups & Topology
 
-- `-d, --dir <path>`: Root directory for recursive scanning. Preserves the persistence of the last used path.
-- `-w, --workers <n>`: Number of concurrent threads (Limit: 50). Default: `5`.
-- `-l, --log <path>`: Redirection of technical output to a persistent log file.
-- `-b, --branch <name>`: Target branch for transition operations (`checkout`).
-- `--autostash`: Automates the safeguarding of local changes prior to an update.
-- `--dry-run`: Preview changes without real application (Supported in `clean` and `restore`).
-- `--gui`: Forces the launch of the graphical user interface.
+GitBulk supports logical grouping of repositories through per-repository configuration files (`.gitbulk.repo.json`). By tagging repositories with group identifiers (e.g., `backend`, `frontend`, `infrastructure`, `data`), teams can target specific subsets of the workspace for operations without affecting unrelated repositories.
 
----
-
-## Advanced Usage Scenarios
-
-### Synchronization with AutoStash
-To avoid blocks caused by uncommitted local changes during a bulk pull, the `--autostash` instruction allows for automatic stashing, updating, and re-applying of the work patch.
-```bash
-gitbulk pull --autostash
+```json
+{
+  "group": "backend",
+  "tags": ["api", "critical"]
+}
 ```
 
-### Execution in CI Environments (Piped Execution)
-GitBulk has been designed following POSIX process standards. Interactive operations like `clean` automatically detect the absence of a terminal (`tty`) or null `stdin` injections, aborting execution safely to prevent catastrophic failures in automated pipelines.
+The **Group Inspector** provides a real-time visual map of the entire workspace topology, organized by group, allowing engineering managers to audit repository structure and operational health at a glance.
+
+---
+
+## Command Reference
+
+### `gitbulk status`
+Runs a parallel status check across all repositories in the active workspace or directory. Outputs a structured visual matrix showing commit divergence, uncommitted changes, and upstream tracking state for each repository.
+
+### `gitbulk fetch`
+Concurrently downloads metadata, remote refs, and object updates from all configured origins. Does not modify working trees. Ideal for pre-synchronization diagnostics.
+
+### `gitbulk pull`
+Advances all repositories to the latest remote state via fast-forward merge. Supports `--autostash` to automatically stash and reapply local changes, preventing operation failures in repositories with dirty working trees.
+
+### `gitbulk commit`
+Initiates a bulk commit flow across all repositories with uncommitted changes. Supports a shared commit message applied to all, or an interactive per-repository dialog for granular control.
+
+### `gitbulk push`
+Pushes all local commits to remote origins in parallel. Handles rejection scenarios and surfaces conflicts without aborting the entire operation batch.
+
+### `gitbulk checkout`
+Switches all repositories in the workspace to a specified branch. If the target branch does not exist in a given repository, the operation is safely skipped with a warning — it never fails silently.
+
+### `gitbulk workspace`
+Entry point for the full workspace lifecycle: `save`, `load`, `sync`, `list`, `delete`. See [Workspace Management](#workspace-management) for full documentation.
+
+### `gitbulk groups`
+Displays the logical topology of the current workspace, organized by group tags defined in `.gitbulk.repo.json` files. Useful for auditing environment structure and targeting group-specific operations.
+
+### `gitbulk ci-status`
+Connects to the GitHub API and retrieves real-time pipeline status (pass/fail/pending) for all repositories in the workspace. Presents results in a unified dashboard, eliminating the need to check each repository's Actions tab individually.
+
+### `gitbulk clean`
+Removes all untracked and ignored files from repositories in batch. **This operation is irreversible.** GitBulk requires explicit confirmation before execution and supports `--dry-run` for safe pre-execution preview.
+
+### `gitbulk auth`
+Configures and stores authentication credentials (PAT tokens) in the OS credential store. See [Authentication & Security](#authentication--security).
+
+---
+
+## Global Flags & Configuration
+
+These flags are available across all commands and modify global behavior:
+
+| Flag | Description |
+|---|---|
+| `-d, --dir <path>` | Sets the root directory for the operation. This value is persisted across sessions. |
+| `-w, --workers <n>` | Number of concurrent worker threads. Use `0` for automatic hardware-based tuning (recommended). |
+| `--gui` | Launches the native desktop GUI instead of using the CLI. |
+| `--dry-run` | Simulates the operation and outputs a preview of changes without executing them. Safe for auditing destructive commands before execution. |
+| `--group <name>` | Limits the operation scope to repositories tagged with the specified group identifier. |

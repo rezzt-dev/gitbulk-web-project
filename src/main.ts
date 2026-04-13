@@ -46,7 +46,7 @@ const dict = {
     navDocs: "Infraestructura",
     navCmds: "Comandos",
     navRepo: "Repositorio",
-    heroBadge: "GitBulk 1.2.0 ya está disponible",
+    heroBadge: "GitBulk 1.3.0 ya está disponible",
     heroTitleHtml: 'Domina todos tus repositorios con <span class="text-gradient inline-block font-black">GitBulk</span>',
     heroDesc: "Una herramienta profesional diseñada para ingenieros DevOps. Automatiza, sincroniza y gestiona docenas de repositorios concurrentemente sin fricción.",
     installQuick: "Instalación Rápida",
@@ -57,34 +57,35 @@ const dict = {
     guiBadge: "NUEVO",
     featsTag: "Ingeniería Avanzada",
     featsTitle: "Arquitectura de Alto Rendimiento",
-    featsDesc: "GitBulk mitiga la latencia y la fatiga repetitiva de gestionar arquitecturas masivas de microservicios con un diseño enfocado en velocidad bruta y seguridad inquebrantable.",
+    featsDesc: "GitBulk mitiga la latencia y la fatiga repetitiva de gestionar arquitecturas masivas de microservicios con un diseño enfocado en velocidad bruta, seguridad y soporte multi-plataforma nativo.",
     f1Title: "Ejecución Concurrente",
-    f1Desc: "Aprovecha múltiples hilos de tu procesador para despachar cientos de repositorios en milisegundos. Di adiós a los scripts bash lineales y letárgicos.",
-    f2Title: "Persistencia de Estado",
-    f2Desc: "Recuerda silenciosamente el último ecosistema de directorios para transiciones instantáneas en futuros procesos sin re-ingresar rutas.",
-    f3Title: "Manejo PAT Integrado",
-    f3Desc: "Autenticación automática transparente a repositorios privados evitando cuellos de botella en los complejos flujos de descarga.",
-    f4Title: "Autoprotección Activa",
-    f4Desc: "Barreras lógicas de confirmación y pantallas dinámicas previenen desastres ante operaciones hiper-destructivas (ej: `clean` forzado).",
+    f1Desc: "Motor nativo con auto-tuning basado en hardware que maximiza el throughput de disco y red para despachar cientos de repositorios en milisegundos.",
+    f2Title: "Workspaces Persistentes",
+    f2Desc: "Guarda, carga y sincroniza entornos completos de directorios raíz. Clona repositorios faltantes automáticamente y archiva los no deseados.",
+    f3Title: "Soporte Multi-idioma Nativo",
+    f3Desc: "Interfaz traducida completamente a español, inglés (US/UK), alemán y francés con tipografía moderna y cumplimiento estricto de identidad visual.",
+    f4Title: "Gestión Visual de Conflictos",
+    f4Desc: "Hubs dedicados para resolución de errores y commits masivos. Barreras lógicas de confirmación previenen desastres en operaciones destructivas.",
     cmdTag: "Referencia CLI",
     cmdTitle: "Herramientas Masivas",
     cmdDesc: "Simplifica tu pipeline CI/CD y tu flujo diario ejecutando acciones transaccionales en todo tu entorno de repositorios con una sola instrucción.",
     colExec: "Ejecutable",
     colProp: "Propósito Funcional",
     footTitle: "GitBulk Dev Tools",
-    footSub: "Versión CLI Profesional v1.2.0",
+    footSub: "Versión Profesional v1.3.0 — CLI & GUI",
     footBuild: "Construido para velocidad y fiabilidad extrema.",
     footDev: "Desarrollado y mantenido por",
     cmds: [
       { cmd: 'status', desc: 'Analiza el estado y divergencias con upstream al instante en todos los proyectos.' },
       { cmd: 'fetch', desc: 'Descarga concurrente en red de todos los metadatos y actualizaciones del origin.' },
-      { cmd: 'pull', desc: 'Avanza hacia el último commit remoto (Fast-Forward) previniendo y resolviendo colisiones.' },
+      { cmd: 'pull', desc: 'Avanza hacia el último commit remoto (Fast-Forward) con soporte --autostash para stash automático.' },
+      { cmd: 'commit', desc: 'Operaciones de escritura masiva con soporte para mensajes personalizados y diálogos interactivos.' },
+      { cmd: 'push', desc: 'Empuja todos los repositorios en paralelo hacia sus remotos con manejo de colisiones.' },
+      { cmd: 'workspace', desc: 'Gestión completa de entornos: save, load, list, delete y sync de topologías.' },
+      { cmd: 'groups', desc: 'Inspección de la topología lógica del espacio de trabajo mediante etiquetas .gitbulk.repo.json.' },
       { cmd: 'checkout', desc: 'Mueve todos los repositorios simultáneamente hacia una rama específica.' },
-      { cmd: 'current-branch', desc: 'Despliega una matriz visual delineando la topografía actual de tus ramas de código.' },
-      { cmd: 'clean', desc: 'Itera para destruir archivos no trackeados (Operación altamente destructiva).' },
-      { cmd: 'ci-status', desc: 'Intercepta en tiempo real los reportes de estado (PASS/FAIL) reportados por el CI Pipeline.' },
-      { cmd: 'export', desc: 'Mapea a profundidad y construye un `snapshot.json` con la radiografía exacta del ecosistema.' },
-      { cmd: 'restore', desc: 'Rescata y reconstruye toda la infraestructura basada en un snapshot estructural previo.' },
+      { cmd: 'clean', desc: 'Itera para destruir archivos no trackeados (Operación altamente destructiva, solicita confirmación).' },
+      { cmd: 'ci-status', desc: 'Monitorización en tiempo real de pipelines de GitHub Actions (PASS/FAIL) en todo el ecosistema.' },
       { cmd: 'auth', desc: 'Ancla criptográficamente tus claves PAT y certificados para autorización local en GitHub/GitLab.' },
     ]
   },
@@ -92,7 +93,7 @@ const dict = {
     navDocs: "Infrastructure",
     navCmds: "Commands",
     navRepo: "Repository",
-    heroBadge: "GitBulk 1.2.0 is now live",
+    heroBadge: "GitBulk 1.3.0 is now live",
     heroTitleHtml: 'Master all your repositories with <span class="text-gradient inline-block font-black">GitBulk</span>',
     heroDesc: "A professional-grade tool architected for DevOps engineers. Automate, synchronize, and effortlessly manage dozens of repositories concurrently minus the friction.",
     installQuick: "Quick Install",
@@ -103,35 +104,36 @@ const dict = {
     guiBadge: "NEW",
     featsTag: "Advanced Engineering",
     featsTitle: "High-Performance Architecture",
-    featsDesc: "GitBulk mitigates latency and the repetitive fatigue of managing massive microservice ecosystems with an uncompromising focus on raw speed and security.",
+    featsDesc: "GitBulk mitigates latency and the repetitive fatigue of managing massive microservice ecosystems with an uncompromising focus on raw speed, security, and native multi-platform support.",
     f1Title: "Concurrent Execution",
-    f1Desc: "Leverage multiple CPU threads to process hundreds of repositories in milliseconds. Leave slow, linear bash scripts confidently in the past.",
-    f2Title: "State Persistence",
-    f2Desc: "Silently caches your last working environment state to guarantee instant jump-backs in future sessions without path re-entries.",
-    f3Title: "Integrated PAT Handling",
-    f3Desc: "Seamless automated authentication to private repositories without bottlenecking or disrupting complex parallel download flows.",
-    f4Title: "Active Self-Protection",
-    f4Desc: "Dynamic confirmation barriers and interactive logical prompts prevent catastrophic errors during hyper-destructive operations (e.g. forced `clean`).",
+    f1Desc: "Hardware-aware native engine with auto-tuning that maximizes disk and network throughput to dispatch hundreds of repositories in milliseconds.",
+    f2Title: "Persistent Workspaces",
+    f2Desc: "Save, load, and sync full root directory environments. Automatically clones missing repositories and archives unwanted ones.",
+    f3Title: "Native Multi-Language Support",
+    f3Desc: "Interface fully translated into Spanish, English (US/UK), German, and French with modern typography and strict visual identity compliance.",
+    f4Title: "Visual Conflict Management",
+    f4Desc: "Dedicated hubs for error resolution and bulk commits. Logical confirmation barriers prevent catastrophic errors during destructive operations.",
     cmdTag: "CLI Reference",
     cmdTitle: "Massive Tooling",
-    cmdDesc: "Streamline your CI/CD pipeline and daily workflow by executing transactional actions across your entire repository environment.",
+    cmdDesc: "Streamline your CI/CD pipeline and daily workflow by executing transactional actions across your entire repository environment with a single instruction.",
     colExec: "Executable",
     colProp: "Functional Outline",
     footTitle: "GitBulk Dev Tools",
-    footSub: "Professional CLI Version v1.2.0",
+    footSub: "Professional Version v1.3.0 — CLI & GUI",
     footBuild: "Engineered for uncompromising speed and reliability.",
     footDev: "Developed and maintained by",
     cmds: [
       { cmd: 'status', desc: 'Instantly analyzes commit state and upstream divergence across all projects.' },
       { cmd: 'fetch', desc: 'Concurrently downloads network metadata and origin parity updates.' },
-      { cmd: 'pull', desc: 'Fast-forwards to the latest remote commit smoothly, resolving overlaps on the fly.' },
-      { cmd: 'checkout', desc: 'Simultaneously pivots all your repositories targeted gracefully to a specified branch.' },
-      { cmd: 'current-branch', desc: 'Outputs a visual layout matrix mapping your entire branch topography.' },
-      { cmd: 'clean', desc: 'Iteratively wipes out non-tracked or tainted files (Highly destructive manipulation).' },
-      { cmd: 'ci-status', desc: 'Directly hooks in to scope out real-time (PASS/FAIL) reports from configured CI Pipelines.' },
-      { cmd: 'export', desc: 'Builds a deeply-mapped `snapshot.json` outlining the total metadata configuration.' },
-      { cmd: 'restore', desc: 'Fully rescues infrastructure deploying the complete environment based on a prior snapshot.' },
-      { cmd: 'auth', desc: 'Securely and locally anchors your developer PAT tokens to guarantee unhindered GitHub/GitLab access.' },
+      { cmd: 'pull', desc: 'Fast-forwards to the latest remote commit with --autostash support to prevent work loss.' },
+      { cmd: 'commit', desc: 'Bulk write operations with support for custom messages and interactive confirmation dialogs.' },
+      { cmd: 'push', desc: 'Pushes all repositories in parallel to their remotes with collision handling.' },
+      { cmd: 'workspace', desc: 'Full environment management: save, load, list, delete, and sync of repository topologies.' },
+      { cmd: 'groups', desc: 'Inspects the logical workspace topology via .gitbulk.repo.json tag-based grouping.' },
+      { cmd: 'checkout', desc: 'Simultaneously pivots all repositories gracefully to a specified branch.' },
+      { cmd: 'clean', desc: 'Iteratively wipes non-tracked files (Highly destructive — requires confirmation).' },
+      { cmd: 'ci-status', desc: 'Real-time monitoring of GitHub Actions pipelines (PASS/FAIL) across the entire ecosystem.' },
+      { cmd: 'auth', desc: 'Securely anchors your PAT tokens to guarantee unhindered GitHub/GitLab access.' },
     ]
   }
 };
@@ -312,7 +314,7 @@ const renderHero = (t: typeof dict.es) => `
         <!-- Status Hint -->
         <div class="mt-8 flex items-center gap-3 text-[11px] text-zinc-600 font-mono border-t border-white/5 pt-4">
           <span class="flex h-2 w-2 rounded-full bg-emerald-500/50 animate-pulse"></span>
-          Ready to install ${state.version === 'gui' ? 'GitBulk GUI' : 'GitBulk CLI'} v1.2.0
+          Ready to install ${state.version === 'gui' ? 'GitBulk GUI' : 'GitBulk CLI'} v1.3.0
           ${state.version === 'gui' ? '<span class="ml-auto text-zinc-700 italic">// High-performance desktop client</span>' : ''}
         </div>
       </div>
@@ -442,12 +444,12 @@ const attachListeners = () => {
 
   const scripts = {
     cli: {
-        windows: 'iwr -useb "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/cli/install.ps1" | iex',
-        linux: 'curl -fsSL "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/cli/install.sh" | bash'
+        windows: 'iwr -useb "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/windows/install_cli.ps1" | iex',
+        linux: 'curl -fsSL "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/linux/install_cli.sh" | bash'
     },
     gui: {
-        windows: 'iwr -useb "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/gui/install.ps1" | iex',
-        linux: 'curl -fsSL "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/gui/install_linux.sh" | bash'
+        windows: 'iwr -useb "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/windows/install_gui.ps1" | iex',
+        linux: 'curl -fsSL "https://raw.githubusercontent.com/rezzt-dev/gitbulk-project/main/dist/linux/install_gui.sh" | bash'
     }
   };
 
